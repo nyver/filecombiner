@@ -1,8 +1,10 @@
 package com.nyver.filecombiner;
 
 import com.nyver.filecombiner.combiner.CombinerEntry;
+import com.nyver.filecombiner.combiner.CombinerInputStream;
 import com.nyver.filecombiner.combiner.CombinerOutputStream;
 import com.nyver.filecombiner.exception.CombinerException;
+import com.nyver.filecombiner.exception.EntryNotClosedException;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
@@ -59,8 +61,12 @@ public class Combiner
 
                 addFiles(out, file, ".");
 
-                System.out.println(String.format("File \"%s\" processed", file.getPath()));
+                System.out.println(String.format("File \"%s\" added", file.getPath()));
             }
+
+            System.out.println();
+            System.out.println(String.format("Archive \"%s\" created successfully", archive.getName()));
+
         } finally {
             if (null != out) {
                 out.close();
@@ -75,8 +81,7 @@ public class Combiner
      * @param dir
      * @throws IOException
      */
-    private void addFiles(CombinerOutputStream out, File file, String dir) throws IOException
-    {
+    private void addFiles(CombinerOutputStream out, File file, String dir) throws IOException, EntryNotClosedException {
         out.putCombinerEntry(new CombinerEntry(file, dir + File.separator + file.getName()));
 
         if (file.isFile()) {
@@ -94,8 +99,50 @@ public class Combiner
 
     }
 
-    public void split()
+    public void split() throws CombinerException, IOException
     {
+        archive = new File(archiveName);
+        if (!archive.exists()) {
+            throw new CombinerException(String.format("Archive \"%s\" is not exists", archiveName));
+        }
+
+        if (!archive.canRead()) {
+            throw new CombinerException(String.format("Can not read from file \"%s\"", archiveName));
+        }
+
+        CombinerInputStream in = null;
+
+        try {
+            in = new CombinerInputStream(
+                    new BufferedInputStream(
+                            new FileInputStream(archive)
+                    )
+            );
+
+            CombinerEntry entry = null;
+
+            while((entry = in.getNextEntry()) != null) {
+                File file = new File(entry.getName());
+                if (entry.isDirectory()) {
+                    if (!file.exists()) {
+                        if (!file.mkdirs()) {
+                            throw new CombinerException(String.format("Couldn't create directory \"%s\"", file.getAbsolutePath()));
+                        }
+                    }
+                } else {
+                    OutputStream out = new FileOutputStream(file);
+                    //IOUtils.copy(in, out);
+                    out.close();
+                }
+
+                System.out.println(String.format("%s extracted", file.getAbsolutePath()));
+            }
+
+        } finally {
+            if (null != in) {
+                in.close();
+            }
+        }
 
     }
 }

@@ -16,11 +16,18 @@ public class CombinerEntry
 
     private File file;
 
-    public CombinerEntry(File file) {
+    public CombinerEntry()
+    {
+
+    }
+
+    public CombinerEntry(File file)
+    {
         this(file, file.getName());
     }
 
-    public CombinerEntry(File file, String name) {
+    public CombinerEntry(File file, String name)
+    {
         this.file = file;
         this.name = name;
         this.isDirectory = file.isDirectory();
@@ -42,9 +49,19 @@ public class CombinerEntry
         return size;
     }
 
+    public void setSize(long size)
+    {
+        this.size = size;
+    }
+
     public boolean isDirectory()
     {
         return isDirectory;
+    }
+
+    public void setDirectory(boolean directory)
+    {
+        this.isDirectory = directory;
     }
 
     public File getFile() {

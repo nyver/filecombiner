@@ -36,6 +36,7 @@ public class FileCombiner
             System.out.println(e.getMessage());
             options.printHelp();
         } catch (Exception e) {
+            e.printStackTrace();
             System.out.println(e.getMessage());
         }
 
