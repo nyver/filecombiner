@@ -27,13 +27,14 @@ public class FileCombiner
             Combiner combiner = new Combiner(options.getArchive(), options.getFiles());
 
             if (options.isCombine()) {
-                combiner.combine();
+                combiner.combine(options.getCompression());
             } else {
-                combiner.split();
+                combiner.split(options.getPath(), options.getCompression());
             }
 
         } catch (ParameterException e) {
             System.out.println(e.getMessage());
+            System.out.println();
             options.printHelp();
         } catch (Exception e) {
             e.printStackTrace();

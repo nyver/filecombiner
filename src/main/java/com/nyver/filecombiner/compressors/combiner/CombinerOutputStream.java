@@ -1,6 +1,7 @@
-package com.nyver.filecombiner.combiner;
+package com.nyver.filecombiner.compressors.combiner;
 
-import com.nyver.filecombiner.exception.CombinerException;
+import com.nyver.filecombiner.compressors.AbstractOutputStream;
+import com.nyver.filecombiner.compressors.Entry;
 import com.nyver.filecombiner.exception.EntryNotClosedException;
 
 import java.io.IOException;
@@ -14,7 +15,7 @@ import java.util.Map;
  * Combiner output stream
  * @author Yuri Novitsky
  */
-public class CombinerOutputStream extends OutputStream
+public class CombinerOutputStream extends AbstractOutputStream
 {
     private long bytesWritten = 0;
 
@@ -35,7 +36,8 @@ public class CombinerOutputStream extends OutputStream
         out.write(b);
     }
 
-    public void putCombinerEntry(CombinerEntry entry) throws EntryNotClosedException, IOException {
+    @Override
+    public void putCompressorEntry(Entry entry) throws EntryNotClosedException, IOException {
         if (!isEntryClosed) {
             throw new EntryNotClosedException("Entry must be closed");
         }
@@ -58,7 +60,8 @@ public class CombinerOutputStream extends OutputStream
         isEntryClosed = false;
     }
 
-    public void closeCombinerEntry()
+    @Override
+    public void closeCompressorEntry()
     {
         isEntryClosed = true;
     }

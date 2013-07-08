@@ -13,11 +13,24 @@ import java.util.List;
 @Parameters(commandDescription = "Split file")
 public class CommandSplit
 {
-    @Parameter(description = "<archive>", required = true, arity = 1)
+    @Parameter(names = "-compression", description = "Compression algorithms: dummy", required = false)
+    private String compression = "";
+
+    @Parameter(description = "<archive> <path to extract>", required = true, arity = 2)
     List<String> files = new ArrayList<String>();
 
     public String getFile()
     {
         return files.get(0);
+    }
+
+    public String getPath()
+    {
+        return files.get(1);
+    }
+
+    public String getCompression()
+    {
+        return compression;
     }
 }

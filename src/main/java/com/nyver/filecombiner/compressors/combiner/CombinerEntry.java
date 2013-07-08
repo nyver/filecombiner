@@ -1,4 +1,6 @@
-package com.nyver.filecombiner.combiner;
+package com.nyver.filecombiner.compressors.combiner;
+
+import com.nyver.filecombiner.compressors.Entry;
 
 import java.io.File;
 
@@ -6,7 +8,7 @@ import java.io.File;
  * Combiner entry
  * @author Yuri Novitsky
  */
-public class CombinerEntry
+public class CombinerEntry implements Entry
 {
     private String name;
 

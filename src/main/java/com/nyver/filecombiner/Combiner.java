@@ -1,8 +1,12 @@
 package com.nyver.filecombiner;
 
-import com.nyver.filecombiner.combiner.CombinerEntry;
-import com.nyver.filecombiner.combiner.CombinerInputStream;
-import com.nyver.filecombiner.combiner.CombinerOutputStream;
+import com.nyver.filecombiner.compressors.AbstractInputStream;
+import com.nyver.filecombiner.compressors.AbstractOutputStream;
+import com.nyver.filecombiner.compressors.CompressorsFactory;
+import com.nyver.filecombiner.compressors.Entry;
+import com.nyver.filecombiner.compressors.combiner.CombinerEntry;
+import com.nyver.filecombiner.compressors.combiner.CombinerInputStream;
+import com.nyver.filecombiner.compressors.combiner.CombinerOutputStream;
 import com.nyver.filecombiner.exception.CombinerException;
 import com.nyver.filecombiner.exception.EntryNotClosedException;
 import org.apache.commons.io.IOUtils;
@@ -28,7 +32,12 @@ public class Combiner
         this.files = files;
     }
 
-    public void combine() throws CombinerException, IOException {
+    /**
+     * Combine files to one file
+     * @throws CombinerException
+     * @throws IOException
+     */
+    public void combine(String compression) throws CombinerException, IOException {
         archive = new File(archiveName);
         if (archive.exists()) {
             throw new CombinerException(String.format("Archive \"%s\" is exists", archiveName));
@@ -40,14 +49,10 @@ public class Combiner
             throw new CombinerException(String.format("Can not write to file \"%s\"", archiveName));
         }
 
-        CombinerOutputStream out = null;
+        AbstractOutputStream out = null;
 
         try {
-            out = new CombinerOutputStream(
-                    new BufferedOutputStream(
-                            new FileOutputStream(archive)
-                    )
-            );
+            out = CompressorsFactory.createCompressorOutputStream(compression, new FileOutputStream(archive));
 
             for(String fileName: files) {
                 File file = new File(fileName);
@@ -60,8 +65,6 @@ public class Combiner
                 }
 
                 addFiles(out, file, ".");
-
-                System.out.println(String.format("File \"%s\" added", file.getPath()));
             }
 
             System.out.println();
@@ -81,17 +84,20 @@ public class Combiner
      * @param dir
      * @throws IOException
      */
-    private void addFiles(CombinerOutputStream out, File file, String dir) throws IOException, EntryNotClosedException {
-        out.putCombinerEntry(new CombinerEntry(file, dir + File.separator + file.getName()));
+    private void addFiles(AbstractOutputStream out, File file, String dir) throws IOException, EntryNotClosedException {
+        out.putCompressorEntry(new CombinerEntry(file, dir + File.separator + file.getName()));
 
         if (file.isFile()) {
+            System.out.print(String.format("Process file \"%s\"", file.getCanonicalPath()));
             BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
             IOUtils.copy(in, out);
-            out.closeCombinerEntry();
+            out.closeCompressorEntry();
             in.close();
+            System.out.print(" - added\n");
         } else if (file.isDirectory()) {
-            out.closeCombinerEntry();
+            out.closeCompressorEntry();
 
+            System.out.print(String.format("Process directory \"%s\"\n", file.getCanonicalPath()));
             for(File childFile: file.listFiles()) {
                 addFiles(out, childFile, file.getName());
             }
@@ -99,30 +105,44 @@ public class Combiner
 
     }
 
-    public void split() throws CombinerException, IOException
+    /**
+     * Split file to files
+     * @throws CombinerException
+     * @throws IOException
+     */
+    public void split(String path, String compression) throws CombinerException, IOException
     {
         archive = new File(archiveName);
         if (!archive.exists()) {
-            throw new CombinerException(String.format("Archive \"%s\" is not exists", archiveName));
+            throw new CombinerException(String.format("Archive \"%s\" is not exists", archive.getCanonicalPath()));
         }
 
         if (!archive.canRead()) {
-            throw new CombinerException(String.format("Can not read from file \"%s\"", archiveName));
+            throw new CombinerException(String.format("Can not read from file \"%s\"", archive.getCanonicalPath()));
         }
 
-        CombinerInputStream in = null;
+        File extractPath = new File(path);
+
+        if (!extractPath.exists()) {
+            if (!extractPath.mkdirs()) {
+                throw new CombinerException(String.format("Can not create path to extract \"%s\"", extractPath.getCanonicalPath()));
+            }
+        }
+
+        if (!extractPath.canWrite()) {
+            throw new CombinerException(String.format("Can not write to directory \"%s\"", extractPath.getCanonicalPath()));
+        }
+
+
+        AbstractInputStream in = null;
 
         try {
-            in = new CombinerInputStream(
-                    new BufferedInputStream(
-                            new FileInputStream(archive)
-                    )
-            );
+            in = CompressorsFactory.createCompressorInputStream(compression, new FileInputStream(archive));
 
-            CombinerEntry entry = null;
+            Entry entry = null;
 
             while((entry = in.getNextEntry()) != null) {
-                File file = new File(entry.getName());
+                File file = new File(extractPath.getCanonicalPath() + File.separator + entry.getName());
                 if (entry.isDirectory()) {
                     if (!file.exists()) {
                         if (!file.mkdirs()) {
@@ -131,11 +151,11 @@ public class Combiner
                     }
                 } else {
                     OutputStream out = new FileOutputStream(file);
-                    //IOUtils.copy(in, out);
+                    IOUtils.copy(in, out);
                     out.close();
                 }
 
-                System.out.println(String.format("%s extracted", file.getAbsolutePath()));
+                System.out.println(String.format("%s extracted", file.getCanonicalPath()));
             }
 
         } finally {

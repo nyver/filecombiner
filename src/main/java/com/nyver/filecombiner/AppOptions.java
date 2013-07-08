@@ -4,6 +4,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import com.nyver.filecombiner.command.CommandCombine;
 import com.nyver.filecombiner.command.CommandSplit;
+import com.nyver.filecombiner.compressors.CompressorsFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +25,10 @@ public class AppOptions
     private String command = "";
 
     private String archive;
+    private String path = "";
     private List<String> files = new ArrayList<String>();
+
+    private String compression = "";
 
     public AppOptions()
     {
@@ -59,14 +63,23 @@ public class AppOptions
                 throw new ParameterException("Expected file or directory");
             }
 
-            archive = commandCombine.getFiles().get(0);
-            files = commandCombine.getFiles().subList(1, commandCombine.getFiles().size());
+            archive     = commandCombine.getFiles().get(0);
+            files       = commandCombine.getFiles().subList(1, commandCombine.getFiles().size());
+            compression = commandCombine.getCompression();
         } else {
             if (commandSplit.getFile().isEmpty()) {
                 throw new ParameterException("Expected archive");
             }
 
-            archive = commandSplit.getFile();
+            archive     = commandSplit.getFile();
+            path        = commandSplit.getPath();
+            compression = commandSplit.getCompression();
+        }
+
+        if (null != compression && !compression.isEmpty()) {
+            if (!CompressorsFactory.isFormatAvailable(compression)) {
+                throw new ParameterException(String.format("Compression algorithm \"%s\" is not found", compression));
+            }
         }
 
         return true;
@@ -107,5 +120,23 @@ public class AppOptions
     public List<String> getFiles()
     {
         return files;
+    }
+
+    /**
+     * Get path for extract files
+     * @return
+     */
+    public String getPath()
+    {
+        return path;
+    }
+
+    /**
+     * Get name of compression algorithm
+     * @return
+     */
+    public String getCompression()
+    {
+        return compression;
     }
 }
