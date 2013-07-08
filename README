@@ -1,1 +1,9 @@
-This file was created by IntelliJ IDEA 12.1.4 for binding GitHub repository
+Tar-like file combiner
+
+Usage:
+
+Compress:
+java -jar filecombiner-1.0-SNAPSHOT-jar-with-dependencies.jar combine test.comb <files or directories>
+
+Uncompress:
+java -jar filecombiner-1.0-SNAPSHOT-jar-with-dependencies.jar split test.comb <extract to path>
